@@ -30,13 +30,253 @@
         <input type="range" id="star-density" min="1000" max="100000" value="40000">
 
         <label for="start-arms">Start Arms:</label>
-        <input type="range" id="start-arms" min="1" max="5" value="2">
+        <input type="range" id="start-arms" min="0" max="1" step="0.1" value="0">
 
         <label for="end-arms">End Arms:</label>
-        <input type="range" id="end-arms" min="1" max="5" value="2">
+        <input type="range" id="end-arms" min="0" max="1" step="0.1" value="1">
     </div>
     <canvas id="cvGalaxy" width="800" height="600"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <script src="dist/bundle.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        class Color {
+            constructor(r = 1, g = 1, b = 1, a = 0) {
+                this.r = r;
+                this.g = g;
+                this.b = b;
+                this.a = a;
+            }
+        }
+
+        class Planet {
+            constructor(radius, distance, color, speed) {
+                this.radius = radius;
+                this.distance = distance;
+                this.color = color;
+                this.speed = speed;
+                this.angle = Math.random() * 2 * Math.PI;
+            }
+        }
+
+        class SolarSystem {
+            constructor(star) {
+                this.star = star;
+                this.planets = [];
+            }
+
+            generate(seed) {
+                const rng = new Math.seedrandom(seed);
+                const numPlanets = Math.floor(rng() * 5) + 3; // 3 to 7 planets
+
+                for (let i = 0; i < numPlanets; i++) {
+                    const radius = rng() * 5 + 2; // 2 to 7
+                    const distance = (i + 1) * 50 + rng() * 20; // 50, 120, 190, ...
+                    const color = new Color(rng(), rng(), rng(), 1);
+                    const speed = rng() * 0.01 + 0.005; // 0.005 to 0.015
+                    this.planets.push(new Planet(radius, distance, color, speed));
+                }
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const galaxyRenderer = GalaxyRenderer.galaxy;
+            const uiController = GalaxyRenderer.uiController;
+
+            const numArmsSlider = document.getElementById('num-arms');
+            const armSplittingSlider = document.getElementById('arm-splitting');
+            const starDensitySlider = document.getElementById('star-density');
+            const startArmsSlider = document.getElementById('start-arms');
+            const endArmsSlider = document.getElementById('end-arms');
+
+            // --- Number of Arms ---
+            numArmsSlider.addEventListener('input', (event) => {
+                const value = parseInt(event.target.value, 10);
+                galaxyRenderer.galaxy.pertN = value;
+                galaxyRenderer.renderUpdateHint |= 2; // DENSITY_WAVES
+            });
+
+            // --- Arm Splitting ---
+            const galaxy = galaxyRenderer.galaxy;
+            galaxy._armSplitting = 0;
+            const originalGetAngularOffset = galaxy.getAngularOffset;
+            galaxy.getAngularOffset = function(rad) {
+                return originalGetAngularOffset.call(this, rad) + this._armSplitting * 100 * Math.sin(rad / 2000);
+            };
+
+            Object.defineProperty(galaxy, 'armSplitting', {
+                set: function(value) {
+                    this._armSplitting = value;
+                }
+            });
+
+            armSplittingSlider.addEventListener('input', (event) => {
+                const value = parseFloat(event.target.value);
+                galaxy.armSplitting = value;
+                galaxyRenderer.renderUpdateHint |= 2; // DENSITY_WAVES
+            });
+
+            // --- Star Density ---
+            starDensitySlider.addEventListener('input', (event) => {
+                const value = parseInt(event.target.value, 10);
+                galaxyRenderer.galaxy.numStars = value;
+                galaxyRenderer.renderUpdateHint |= 8; // STARS
+            });
+
+            // --- Start and End Arms ---
+            galaxy._startArms = 0;
+            galaxy._endArms = 1;
+
+            const originalGetExcentricity = galaxy.getExcentricity;
+            galaxy.getExcentricity = function(rad) {
+                const armStart = this._radCore + this._startArms * (this._radGalaxy - this._radCore);
+                const armEnd = this._radCore + this._endArms * (this._radGalaxy - this._radCore);
+
+                if (rad < armStart || rad > armEnd) {
+                    return 1;
+                }
+
+                return originalGetExcentricity.call(this, rad);
+            }
+
+            Object.defineProperty(galaxy, 'startArms', {
+                set: function(value) {
+                    this._startArms = value;
+                }
+            });
+
+            Object.defineProperty(galaxy, 'endArms', {
+                set: function(value) {
+                    this._endArms = value;
+                }
+            });
+
+            startArmsSlider.addEventListener('input', (event) => {
+                const value = parseFloat(event.target.value);
+                galaxy.startArms = value;
+                galaxyRenderer.renderUpdateHint |= 2; // DENSITY_WAVES
+            });
+
+            endArmsSlider.addEventListener('input', (event) => {
+                const value = parseFloat(event.target.value);
+                galaxy.endArms = value;
+                galaxyRenderer.renderUpdateHint |= 2; // DENSITY_WAVES
+            });
+
+            const canvas = document.getElementById('cvGalaxy');
+            canvas.addEventListener('click', (event) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                const worldX = (x / canvas.width) * 2 - 1;
+                const worldY = -(y / canvas.height) * 2 + 1;
+
+                const closestStar = findClosestStar(worldX, worldY);
+                if (closestStar) {
+                    transitionToSolarSystem(closestStar);
+                }
+            });
+
+            window.currentView = 'galaxy';
+            window.solarSystem = null;
+
+            function findClosestStar(x, y) {
+                let closestStar = null;
+                let minDistance = Infinity;
+
+                const stars = galaxy.stars;
+                for (let i = 0; i < stars.length; i++) {
+                    const star = stars[i];
+                    if (star.type !== 0) continue;
+
+                    const theta = star.theta0 + galaxyRenderer.time * star.velTheta;
+                    const angle = star.tiltAngle + theta;
+                    const a = star.a;
+                    const b = star.b;
+
+                    const starX = a * Math.cos(theta * Math.PI / 180);
+                    const starY = b * Math.sin(theta * Math.PI / 180);
+
+                    const rot_x = starX * Math.cos(angle * Math.PI / 180) - starY * Math.sin(angle * Math.PI / 180);
+                    const rot_y = starX * Math.sin(angle * Math.PI / 180) + starY * Math.cos(angle * Math.PI / 180);
+
+                    const dx = rot_x / galaxyRenderer.fov - x;
+                    const dy = rot_y / galaxyRenderer.fov - y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestStar = star;
+                    }
+                }
+
+                if (minDistance < 0.1) {
+                    return closestStar;
+                }
+
+                return null;
+            }
+
+            function transitionToSolarSystem(star) {
+                window.solarSystem = new SolarSystem(star);
+                window.solarSystem.generate(star.temp);
+
+                const targetFov = 100;
+                const animationDuration = 2000;
+                const startFov = galaxyRenderer.fov;
+                const fovChange = targetFov - startFov;
+                let startTime = null;
+
+                function animateZoom(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = timestamp - startTime;
+                    const percentage = Math.min(progress / animationDuration, 1);
+                    galaxyRenderer.fov = startFov + fovChange * percentage;
+
+                    if (percentage < 1) {
+                        requestAnimationFrame(animateZoom);
+                    } else {
+                        window.currentView = 'solarSystem';
+                    }
+                }
+
+                requestAnimationFrame(animateZoom);
+            }
+
+            const originalRender = galaxyRenderer.render;
+            galaxyRenderer.render = function() {
+                if (window.currentView === 'solarSystem') {
+                    this.renderSolarSystem();
+                } else {
+                    originalRender.call(this);
+                }
+            };
+
+            galaxyRenderer.renderSolarSystem = function() {
+                const ctx = this.canvas.getContext('2d');
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (window.solarSystem) {
+                    const star = window.solarSystem.star;
+                    const starColor = f.colorFromTemperature(star.temp);
+
+                    ctx.fillStyle = `rgb(${starColor.r * 255},${starColor.g * 255},${starColor.b * 255})`;
+                    ctx.beginPath();
+                    ctx.arc(this.canvas.width / 2, this.canvas.height / 2, 10, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    for (const planet of window.solarSystem.planets) {
+                        planet.angle += planet.speed;
+                        const x = this.canvas.width / 2 + planet.distance * Math.cos(planet.angle);
+                        const y = this.canvas.height / 2 + planet.distance * Math.sin(planet.angle);
+                        ctx.fillStyle = `rgb(${planet.color.r * 255},${planet.color.g * 255},${planet.color.b * 255})`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, planet.radius, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
+            };
+        });
+    </script>
 </body>
 </html>
