@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Galaxy Generator</title>
+    <style>
+        body { font-family: sans-serif; }
+        canvas { border: 1px solid black; }
+        .controls {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .controls label {
+            text-align: right;
+            padding-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Galaxy Generator</h1>
+    <div class="controls">
+        <label for="num-arms">Number of Arms:</label>
+        <input type="range" id="num-arms" min="1" max="10" value="2">
+
+        <label for="arm-splitting">Arm Splitting:</label>
+        <input type="range" id="arm-splitting" min="0" max="1" step="0.1" value="0.5">
+
+        <label for="star-density">Star Density:</label>
+        <input type="range" id="star-density" min="1000" max="100000" value="40000">
+
+        <label for="start-arms">Start Arms:</label>
+        <input type="range" id="start-arms" min="1" max="5" value="2">
+
+        <label for="end-arms">End Arms:</label>
+        <input type="range" id="end-arms" min="1" max="5" value="2">
+    </div>
+    <canvas id="cvGalaxy" width="800" height="600"></canvas>
+    <script src="dist/bundle.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

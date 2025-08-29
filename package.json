@@ -1,0 +1,26 @@
+{
+  "name": "galaxy-generator",
+  "version": "1.0.0",
+  "description": "A standalone galaxy generator with tools for varying arms, where arms split, and how many starting and end arms there are as well as different density of stars.",
+  "main": "dist/bundle.js",
+  "scripts": {
+    "build": "webpack --mode development",
+    "prod": "webpack --mode production"
+  },
+  "keywords": [
+    "galaxy",
+    "simulation",
+    "generator"
+  ],
+  "author": "Jules",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.5",
+    "webpack": "^5.44.0",
+    "webpack-cli": "^4.7.2"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.3.0"
+  }
+}
