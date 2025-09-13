@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starfield Galaxy Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        .control-panel, .info-panel {
+            scrollbar-width: thin;
+            scrollbar-color: #4CAF50 #333;
+        }
+
+        .control-panel::-webkit-scrollbar, .info-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .control-panel::-webkit-scrollbar-track, .info-panel::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb, .info-panel::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 4px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb:hover, .info-panel::-webkit-scrollbar-thumb:hover {
+            background: #45a049;
+        }
+
+        .section {
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        select {
+            width: 100%;
+            padding: 5px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button {
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 10000;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #333;
+            border-radius: 50%;
+            border-top-color: #4CAF50;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        h3, h4 {
+            margin: 10px 0 5px 0;
+        }
+
+        h3 {
+            font-size: 18px;
+        }
+
+        h4 {
+            font-size: 16px;
+            color: #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .control-panel, .info-panel {
+                width: 90vw;
+                font-size: 12px;
+            }
+            
+            .control-panel {
+                left: 5vw;
+            }
+            
+            .info-panel {
+                right: 5vw;
+                top: auto;
+                bottom: 10px;
+            }
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-height: 600px) {
+            .control-panel, .info-panel {
+                max-height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingScreen" class="loading">
+        <div class="spinner"></div>
+        Loading Galaxy Generator...
+    </div>
+    
+    <script>
+        // Remove loading screen once the page is fully loaded
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

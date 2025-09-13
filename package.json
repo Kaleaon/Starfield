@@ -1,0 +1,27 @@
+{
+  "name": "starfield-galaxy-generator",
+  "version": "1.0.0",
+  "description": "Advanced galaxy generator with multiple galaxy types, star system management, and hyperspace lanes",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "webpack --mode development",
+    "prod": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "serve": "webpack serve --mode development"
+  },
+  "keywords": ["galaxy", "generator", "spiral", "ring", "cluster", "hyperspace", "sci-fi", "worldbuilding"],
+  "author": "Starfield Galaxy Generator",
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^5.99.5",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^4.15.1",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "html-webpack-plugin": "^5.5.3",
+    "copy-webpack-plugin": "^11.0.0"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.3.0"
+  }
+}
